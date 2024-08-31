@@ -16,12 +16,12 @@
                 },
                 {
                     "name": "CamMovement",
-                    "type": "Button",
+                    "type": "Value",
                     "id": "65d6236c-742d-405a-b928-60ecbc63e73f",
-                    "expectedControlType": "Button",
+                    "expectedControlType": "Vector2",
                     "processors": "",
                     "interactions": "",
-                    "initialStateCheck": false
+                    "initialStateCheck": true
                 }
             ],
             "bindings": [
@@ -94,7 +94,18 @@
                 {
                     "name": "",
                     "id": "37efe352-3a72-410c-a90c-1386906e6e6b",
-                    "path": "",
+                    "path": "<Gamepad>/rightStick",
+                    "interactions": "",
+                    "processors": "ScaleVector2(x=50,y=50)",
+                    "groups": "",
+                    "action": "CamMovement",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "ffd63af1-d47d-42a0-9ee9-bad0c2d87228",
+                    "path": "<Mouse>/delta",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
