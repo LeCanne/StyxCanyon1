@@ -16,14 +16,50 @@ public class PlayerController : MonoBehaviour
     [SerializeField] LayerMask jumpMask;
 
 
-    [SerializeField]private float mouseSensitivity;
+
+    
 
     private Ray ray;
     private Vector3 moveDirection;
+   
     private Rigidbody rb;
 
     private Vector3 velocity;
     public float speed;
+    [Header("SlopeHandling")]
+    public float maxAngle;
+    private Vector3 slopeDirection;
+    RaycastHit slopeHit;
+    private float distanceSlopRay = 1f;
+    private bool OnSlope()
+    {
+        if (Physics.Raycast(groundedOrigin.transform.position, Vector3.down, out slopeHit, distanceSlopRay, jumpMask))
+        {
+            float angle = Vector3.Angle(slopeHit.normal, Vector3.up);
+            if (angle < MathF.Abs(maxAngle))
+            {
+                if (slopeHit.normal != Vector3.up)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                Debug.Log(angle);
+                return false;
+            }
+           
+            
+        }
+        else
+        {
+            return false;
+        }
+    }
     
     // Start is called before the first frame update
     void Start()
@@ -49,7 +85,16 @@ public class PlayerController : MonoBehaviour
     private void PhysicsMove()
     {
         moveDirection = transform.forward * velocity.z + transform.right * velocity.x;
-        rb.MovePosition(transform.position + moveDirection * speed * Time.deltaTime);
+
+        if (!OnSlope())
+        {
+            rb.MovePosition(transform.position + moveDirection * speed * Time.deltaTime);
+        }
+        else if(grounded && OnSlope())
+        {
+            rb.MovePosition(transform.position + slopeDirection * speed * Time.deltaTime);
+        }
+       
     }
 
     private void PhysicsJump()
@@ -60,7 +105,7 @@ public class PlayerController : MonoBehaviour
             jumping = false;
         }
 
-        if(rb.velocity.y < 0)
+        if(rb.velocity.y < 0 && !grounded)
         {
             rb.AddForce(Physics.gravity, ForceMode.Acceleration);
         }
@@ -98,17 +143,11 @@ public class PlayerController : MonoBehaviour
 
     public void CheckGround()
     {
-        RaycastHit hit;
-        Debug.DrawRay(groundedOrigin.transform.position, -transform.up * distanceRaycast, Color.yellow);
-        if (Physics.Raycast(groundedOrigin.transform.position, -transform.up, out hit, distanceRaycast, jumpMask))
-        {
-            Debug.Log(grounded);
-            grounded = true;
-        }
-        else
-        {
-            grounded = false;
-        }
+        
+        grounded = Physics.CheckSphere(transform.position - new Vector3(0,1,0), distanceRaycast, jumpMask);
+     
+
+        slopeDirection = Vector3.ProjectOnPlane(moveDirection, slopeHit.normal);
     }
 
     public void CameraValues()
@@ -116,14 +155,7 @@ public class PlayerController : MonoBehaviour
       
        
     }
-    public void MoveCam(InputAction.CallbackContext axisCam)
-    {
-      
-       
-
-
-
-    }
+ 
 
     public void OnDrawGizmos()
     {
