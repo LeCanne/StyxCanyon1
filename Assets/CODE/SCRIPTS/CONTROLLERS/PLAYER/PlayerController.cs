@@ -8,12 +8,16 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [Header("JumpChecks")]
+    float playerHeight = 2;
     [SerializeField] private Transform groundedOrigin;
-    [SerializeField] private float distanceRaycast;
+    [SerializeField] private float groundDistance;
     [SerializeField] private bool grounded;
     [SerializeField] private float jumpHeight;
+    [SerializeField] Transform orientation;
     private bool jumping;
     [SerializeField] LayerMask jumpMask;
+    [SerializeField] Transform groundCheck;
+    [SerializeField] float airMultiplier = 0.4f;
 
 
 
@@ -26,21 +30,28 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 velocity;
     public float speed;
+    public float movementMultiplier;
+    [Header ("Drag")]
+    public float groundDrag = 6f;
+    public float airDrag = 2f;
     [Header("SlopeHandling")]
     public float maxAngle;
     private Vector3 slopeDirection;
     RaycastHit slopeHit;
-    private float distanceSlopRay = 1f;
+   
     private bool OnSlope()
     {
-        if (Physics.Raycast(groundedOrigin.transform.position, Vector3.down, out slopeHit, distanceSlopRay, jumpMask))
+        if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight / 2 + 1f, jumpMask))
         {
+            
             float angle = Vector3.Angle(slopeHit.normal, Vector3.up);
             if (angle < MathF.Abs(maxAngle))
             {
                 if (slopeHit.normal != Vector3.up)
                 {
+                    Debug.Log("onSlope");
                     return true;
+                    
                 }
                 else
                 {
@@ -73,7 +84,7 @@ public class PlayerController : MonoBehaviour
     {
         CameraValues();
         CheckGround();
-        
+        ControlDrag();
     }
 
     private void FixedUpdate()
@@ -82,17 +93,29 @@ public class PlayerController : MonoBehaviour
         PhysicsJump();
     }
 
+    private void ControlDrag()
+    {
+        if(grounded)
+        rb.drag = groundDrag;
+        else
+            rb.drag = airDrag;
+    }
     private void PhysicsMove()
     {
-        moveDirection = transform.forward * velocity.z + transform.right * velocity.x;
+        slopeDirection = Vector3.ProjectOnPlane(moveDirection,slopeHit.normal);
+        moveDirection = orientation.forward * velocity.z + orientation.right * velocity.x;
 
-        if (!OnSlope())
+        if (grounded && !OnSlope())
         {
-            rb.MovePosition(transform.position + moveDirection * speed * Time.deltaTime);
+            rb.AddForce(moveDirection * speed * movementMultiplier, ForceMode.Acceleration);
         }
         else if(grounded && OnSlope())
         {
-            rb.MovePosition(transform.position + slopeDirection * speed * Time.deltaTime);
+            rb.AddForce(slopeDirection.normalized * speed * movementMultiplier, ForceMode.Acceleration);
+        }
+        else if(!grounded)
+        {
+            rb.AddForce(moveDirection * speed * movementMultiplier * airMultiplier, ForceMode.Acceleration);
         }
        
     }
@@ -101,6 +124,7 @@ public class PlayerController : MonoBehaviour
     {
         if(jumping == true)
         {
+            rb.velocity = new Vector3(rb.velocity.x, 0, rb.velocity.z);
             rb.AddForce(0, jumpHeight, 0, ForceMode.Impulse);
             jumping = false;
         }
@@ -123,6 +147,7 @@ public class PlayerController : MonoBehaviour
 
         velocity = new Vector3(x, 0, y);
        
+
     }
 
     public void Jump(InputAction.CallbackContext jump)
@@ -144,7 +169,7 @@ public class PlayerController : MonoBehaviour
     public void CheckGround()
     {
         
-        grounded = Physics.CheckSphere(transform.position - new Vector3(0,1,0), distanceRaycast, jumpMask);
+        grounded = Physics.CheckSphere(groundCheck.position, groundDistance, jumpMask);
      
 
         slopeDirection = Vector3.ProjectOnPlane(moveDirection, slopeHit.normal);

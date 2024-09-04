@@ -14,9 +14,14 @@ public class HumanCamera : MonoBehaviour
     public float Speed;
     public float TurnSpeed;
     private Vector2 m_rotation;
+    [SerializeField] Transform orientation;
 
     float xRotation;
-    public GameObject followTransform;
+    float yRotation;
+
+    public float sensX;
+    public float sensY;
+    public GameObject CameraParent;
     private Vector2 variableCam;
     public Animator animatorPlayer;
 
@@ -32,6 +37,7 @@ public class HumanCamera : MonoBehaviour
     private void Awake()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
 
     private void OnEnable()
@@ -46,10 +52,9 @@ public class HumanCamera : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-       // transform.position = followTransform.transform.position;
-        //transform.forward = Player.transform.forward;
+       
         MouseRotate();
-        Clamp();
+       
 
     }
 
@@ -58,28 +63,18 @@ public class HumanCamera : MonoBehaviour
       x = valuecam.ReadValue<Vector2>().x;
        y = valuecam.ReadValue<Vector2>().y;
 
-
+        
     }
     void MouseRotate()
     {
-      
-        
-
-      
-        variableCam.x = x * Speed * Time.deltaTime;
-        variableCam.y = y * Speed * Time.deltaTime;
-
-        xRotation -= variableCam.y;
-
+        yRotation += x * sensX * Time.deltaTime;
+        xRotation -= y * sensY * Time.deltaTime;
         xRotation = Mathf.Clamp(xRotation, min, max);
 
 
 
-        transform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-       
-         
-
-        Player.transform.Rotate(Vector3.up * variableCam.x);
+        CameraParent.transform.localRotation = Quaternion.Euler(xRotation, yRotation, 0f);
+       orientation.transform.rotation = Quaternion.Euler(0,yRotation,0);
            
           
             
@@ -87,8 +82,5 @@ public class HumanCamera : MonoBehaviour
         
     }
 
-    void Clamp()
-    {
-       
-    }
+  
 }
